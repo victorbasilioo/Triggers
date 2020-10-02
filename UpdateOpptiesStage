@@ -1,0 +1,27 @@
+trigger UpdateOpptiesStage on Account (before insert, before update) {
+//Get the account data
+    for(Account a:Trigger.new){
+        //Check if account is marked as Active, get all opportunities from this account, check each opportunity if it has a different status from 'Closed Won', if yes, mark it as 'Closed Won' and add to a second list;
+        if(a.Active__c == 'Yes'){
+            list<Opportunity> oppList = new list<Opportunity>([Select Id,StageName from Opportunity where Accountid =: a.Id]);
+            list<Opportunity> oppListNew = new list<Opportunity>();
+            for(Opportunity opp:oppList){
+                if(opp.StageName <> 'Closed Won'){
+                    opp.StageName = 'Closed Won';
+                    oppListNew.add(opp);
+                }
+            }
+            
+            
+        //Check if there are opportunities marked as 'closed won' in the second list, if there are, updated them and update the description field on account;
+            if(oppListNew.size() > 0){
+			      update oppListNew;
+            a.Description = 'Opportunities updated';
+            }
+        }
+        
+        
+        	
+    }
+    
+}

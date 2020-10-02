@@ -1,0 +1,43 @@
+trigger UpdateOpptiesStage on Account (before insert, before update) {
+
+    for(Account a:Trigger.new){
+        
+        if(a.Active__c == 'Yes'){
+            list<Opportunity> oppList = new list<Opportunity>([Select Id,StageName from Opportunity where Accountid =: a.Id]);
+            list<Opportunity> oppListNew = new list<Opportunity>();
+            for(Opportunity opp:oppList){
+                if(opp.StageName <> 'Closed Won'){
+                    opp.StageName = 'Closed Won';
+                    oppListNew.add(opp);
+                }
+            }
+            
+            if(oppListNew.size() > 0){
+			
+                
+                list<Contact> cont = new List<Contact>([Select id,Title from Contact where title = 'Manager' AND accountId =: a.id]);
+                if(cont.size()>0){
+                list<OpportunityContactRole> oppContRole = new list<OpportunityContactRole>();
+               		for (Opportunity opp2: oppListNew){
+                    	
+                        for(Contact c:cont){
+                        OpportunityContactRole ocr = new OpportunityContactRole();
+                        ocr.ContactId = c.id;
+                        ocr.OpportunityId = opp2.id;
+                        oppContRole.add(ocr);
+                        }
+                	}
+                    
+                   insert oppContRole;
+                }
+                
+                update oppListNew;
+            	a.Description = 'Opportunities updated';
+            }
+        }
+        
+        
+        	
+    }
+    
+}
